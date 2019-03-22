@@ -351,7 +351,7 @@ Nasz wtyczka należy do tej pierwszej grupy więc jej przykładowe użycie wygl�
 ```
 
 W trakcie wykonania fazy `generate-resources` zostanie wywołany cel `generate` z ustawionymi 
-parametrami `text` i `font`. Po zbudowaniu i uruchomineiu aplikacji:
+parametrami `text` i `font`. Po zbudowaniu i uruchomieniu aplikacji:
 
 ```bash
 mvn clean install spring-boot:run
