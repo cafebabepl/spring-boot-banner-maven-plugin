@@ -320,7 +320,7 @@ a następnie użyć w jakimś "spring-boot'owym" projekcie (albo jakimkolwiek in
 
 W Maven mamy dostępne wtyczki służące do budowania (cykl `default`, konfigurowane w 
 znaczniku `<build>`) oraz raportowania (cykl `site`, konfigurowane w znaczniku `<reporting>`). 
-Nasz wtyczka należy do tej pierwszej grupy więc jej przykładowe użycie wygląda jak poniżej:
+Nasza wtyczka należy do tej pierwszej grupy więc jej przykładowe użycie wygląda jak poniżej:
 
 ```xml
     <build>
@@ -356,7 +356,7 @@ parametrami `text` i `font`. Po zbudowaniu i uruchomieniu aplikacji:
 ```bash
 mvn clean install spring-boot:run
 ```
-pełna petarda: 
+pełen sukces - marketing będzie zadowolony! 
 
 ```
 [INFO] <<< spring-boot-maven-plugin:2.1.3.RELEASE:run (default-cli) < test-compile @ aums-mdm-readings-api <<<
