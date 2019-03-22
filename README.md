@@ -39,7 +39,7 @@ tworzenie naszego własnego logo wpiąć w cykl budowania naszej aplikacji.
 ### Projekt (in. rozwinięcie)
 Projekt własnej wtyczki do Mavena utworzymy i będziemy budować oczywiście w... Mavenie.
 
-```
+```bash
 mvn archetype:generate -B \
     -DarchetypeArtifactId=maven-archetype-quickstart \
     -DgroupId=com.asseco.maven.plugin -DartifactId=spring-boot-banner-maven-plugin \
@@ -55,7 +55,7 @@ zarezerwowana jest dla oficjalnych wtyczek Apache Maven.
 
 Po utworzeniu projektu, w pierwszym kroku, dodajemy zależności:
 
-```
+```xml
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
@@ -88,7 +88,7 @@ MOJO = POJO (ang. *Plain Old Java Object*) + Maven, a samo słowo oznacza:
 
 Uzbrojeni w te nadprzyrodzone moce tworzymy klasę:
 
-```
+```java
 @Mojo(name = "hello")
 public class SpringBootBannerMojo extends AbstractMojo {
 
@@ -136,7 +136,7 @@ Na początek dodajmy kilka parametrów wywołania. Wystarczy dodać pole i oznac
 Sam parametr możemy... sparametryzować. Domyślnie nazwa parametru `name` jest taka jak 
 nazwa pola.
 
-```
+```java
     @Parameter(property = "spring-boot-banner.text", required = true)
     private String text;
 ```
@@ -151,35 +151,35 @@ The parameters 'text' for goal com.asseco.maven.plugin:spring-boot-banner-maven-
 
 Każdy parametr może mieć ustaloną wartość domyślną, zarówno "na sztywno":
 
-```
+```java
     @Parameter(property = "spring-boot-banner.font", defaultValue = "standard")
     private String font;
 ```
 jak i można użyć wyrażenia, którego wartość jest dostępna w naszym POM, odwołując się np. do wyjściowego 
 katalogu kompilacji:
 
-```
+```java
     @Parameter(property = "spring-boot-banner.directory", defaultValue = "${project.build.outputDirectory}")
     private File directory;
 ```
 
 Każdemu parametrowi możemy nadać `property` dzięki czemu możemy ustawić jego wartość nie 
 tylko w sekcji `configuration` samego pluginu:
-```
+```xml
     <configuration>
         <text>cafebabe</text>
     </configuration>
 ```
 ale zarówno we właściwościach projektu POM, np.:
 
-```
+```xml
     <properties>
         <java.version>1.8</java.version>
         <spring-boot-banner.font>block</spring-boot-banner.font>
     </properties>
 ```
 jak i wywołać z linii poleceń, np.:
-```
+```bash
 mvn com.asseco.maven.plugin:spring-boot-banner-maven-plugin:1.0.0:generate -Dspring-boot-banner.text=Asseco
 
 ```
@@ -322,7 +322,7 @@ W Maven mamy dostępne wtyczki służące do budowania (cykl `default`, konfigur
 znaczniku `<build>`) oraz raportowania (cykl `site`, konfigurowane w znaczniku `<reporting>`). 
 Nasz wtyczka należy do tej pierwszej grupy więc jej przykładowe użycie wygląda jak poniżej:
 
-```
+```xml
     <build>
         <plugins>
             <plugin>
@@ -353,7 +353,7 @@ Nasz wtyczka należy do tej pierwszej grupy więc jej przykładowe użycie wygl�
 W trakcie wykonania fazy `generate-resources` zostanie wywołany cel `generate` z ustawionymi 
 parametrami `text` i `font`. Po zbudowaniu i uruchomineiu aplikacji:
 
-```
+```bash
 mvn clean install spring-boot:run
 ```
 pełna petarda: 
