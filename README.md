@@ -53,9 +53,42 @@ Pierwszego mechanizmu nie będziemy używać, drugi problem rozwiązali za nas t
 Zgodnie z konwencją nazwa naszego pluginu powinna mieć format `<yourplugin>-maven-plugin`, nazwa w stylu `maven-<yourplugin>-plugin` 
 zarezerwowana jest dla oficjalnych wtyczek Apache Maven.
 
-Po utworzeniu projektu, w pierwszym kroku, dodajemy zależności:
+Po utworzeniu projektu, w pierwszym kroku, dodajemy zależności `maven-plugin-api`,
+który zapewni nam dostęp do klasy `AbstractMojo` oraz `maven-plugin-annotations`, który 
+umożliwi wykorzystanie adnotacji `@Mojo`.
+
+W zerowym kroku (czyli jeszcze przed krokiem pierwszym) musimy zmienić domyślny parametr z 
+`<packaging>jar</packaging>` na `<packaging>maven-plugin</packaging>`.
+Bez tej zmiany w trakcie budowania wtyczki nie zostanie utworzony tzw. deskryptor wtyczki 
+i próba jej uruchomienia zakończy się błędem: 
+  
+```
+[ERROR] Failed to parse plugin descriptor for com.asseco.maven.plugin:spring-boot-banner-maven-plugin:1.0.0
+(c:\Users\Wlodzimierz.Kozlowsk\.m2\repository\com\asseco\maven\plugin\spring-boot-banner-maven-plugin\1.0.0\spring-boot-banner-maven-plugin-1.0.0.jar):
+No plugin descriptor found at META-INF/maven/plugin.xml -> [Help 1]
+```
+
+POM powinien w tym momencie wyglądać mniej więcej w ten sposób:
 
 ```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.asseco.maven.plugin</groupId>
+    <artifactId>spring-boot-banner-maven-plugin</artifactId>
+    <packaging>maven-plugin</packaging>
+    <version>1.0.0</version>
+    <name>spring-boot-banner-maven-plugin</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
@@ -67,19 +100,8 @@ Po utworzeniu projektu, w pierwszym kroku, dodajemy zależności:
             <version>3.6.0</version>
             <scope>provided</scope>
         </dependency>
-```
-
-`maven-plugin-api` zapewni nam dostęp do klasy `AbstractMojo`, `maven-plugin-annotations` do adnotacji `@Mojo`.
-
-W zerowym kroku (czyli jeszcze przed krokiem pierwszym) musimy zmienić domyślny parametr z 
-`<packaging>jar</packaging>` na `<packaging>maven-plugin</packaging>`.
-Bez tej zmiany w trakcie budowania wtyczki nie zostanie utworzony tzw. deskryptor wtyczki 
-i próba jej uruchomienia zakończy się błędem: 
-  
-```
-[ERROR] Failed to parse plugin descriptor for com.asseco.maven.plugin:spring-boot-banner-maven-plugin:1.0.0
-(c:\Users\Wlodzimierz.Kozlowsk\.m2\repository\com\asseco\maven\plugin\spring-boot-banner-maven-plugin\1.0.0\spring-boot-banner-maven-plugin-1.0.0.jar):
-No plugin descriptor found at META-INF/maven/plugin.xml -> [Help 1]
+    </dependencies>
+</project>
 ```
 
 Czym jest Mojo?
@@ -178,11 +200,7 @@ ale zarówno we właściwościach projektu POM, np.:
         <spring-boot-banner.font>block</spring-boot-banner.font>
     </properties>
 ```
-jak i wywołać z linii poleceń, np.:
-```bash
-mvn com.asseco.maven.plugin:spring-boot-banner-maven-plugin:1.0.0:generate -Dspring-boot-banner.text=Asseco
-
-```
+jak i wywołać z linii poleceń.
 
 Warto zwrócić uwagę na jakiś sensowny prefiks tych właściwości, żeby nie popaść w konflikt z 
 pozostałymi ustawieniami.
@@ -204,7 +222,17 @@ i dla niej skonfigurowany jest domyślny szablon wywołania usługi. Jeśli zajd
 zmiany bo, na przykład, napiszemy "lepszą swoją" albo znajdziemy "lepszą inną" zmiana 
 konfiguracji parametru pozwoli nam wykorzystać inną usługę bez zmiany wtyczki.
 
-Pozostaje nam to wszystko poskładać w jedną całość:
+Pozostaje nam to wszystko poskładać w jedną całość. Uzupełnijmy zależności w POM o:
+
+```xml
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.7</version>
+        </dependency>
+```
+
+Pełna implementacja naszej wtyczki wygląda teraz tak:
 
 ```java
 package com.asseco.maven.plugin.banner;
@@ -316,7 +344,15 @@ public class SpringBootBannerMojo extends AbstractMojo {
 }
 ```
 
-a następnie użyć w jakimś "spring-boot'owym" projekcie (albo jakimkolwiek innym).
+Po zbudowaniu naszej wtyczki `mvn clean install` możemy ją wywołać z linii poleceń, np.
+
+```
+mvn com.asseco.maven.plugin:spring-boot-banner-maven-plugin:1.0.0:generate \
+    -Dspring-boot-banner.text=Assecoo \
+    -Dspring-boot-banner.directory=C:/temp
+```
+
+lub użyć w jakimś "spring-boot'owym" projekcie (albo jakimkolwiek innym).
 
 W Maven mamy dostępne wtyczki służące do budowania (cykl `default`, konfigurowane w 
 znaczniku `<build>`) oraz raportowania (cykl `site`, konfigurowane w znaczniku `<reporting>`). 
@@ -324,29 +360,31 @@ Nasza wtyczka należy do tej pierwszej grupy więc jej przykładowe użycie wygl
 
 ```xml
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>com.asseco.maven.plugin</groupId>
-                <artifactId>spring-boot-banner-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <text>cafebabe</text>
-                    <font>block</font>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>com.asseco.maven.plugin</groupId>
+                    <artifactId>spring-boot-banner-maven-plugin</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <text>cafebabe</text>
+                        <font>block</font>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>generate</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 ```
 
@@ -356,7 +394,7 @@ parametrami `text` i `font`. Po zbudowaniu i uruchomieniu aplikacji:
 ```bash
 mvn clean install spring-boot:run
 ```
-pełen sukces - marketing będzie zadowolony! 
+osiągamy pełen sukces. Marketing będzie zadowolony! 
 
 ```
 [INFO] <<< spring-boot-maven-plugin:2.1.3.RELEASE:run (default-cli) < test-compile @ aums-mdm-readings-api <<<
@@ -374,8 +412,8 @@ pełen sukces - marketing będzie zadowolony!
 ```
 
 ### Podsumowanie (in. zakończenie)
-Przedstawiona tutaj implementacja wtyczki jest oczywiście tylko pretekstem ale mam nadzieję, 
-że pokazuje prosty ale równocześnie potężny mechanizm budowania własnych wtyczek dla Mavena. Mechanizm, 
+Przedstawiona tutaj implementacja wtyczki jest oczywiście tylko pretekstem, ale mam nadzieję, 
+że pokazuje prosty a równocześnie potężny mechanizm budowania własnych wtyczek dla Mavena. Mechanizm, 
 który w naszym cyklu budowania i wdrażania aplikacji pozwoli dodać własne kroki abyśmy 
 mogli automatyzować wszystko to co tylko można zautomatyzować bez potrzeby sprawdzonego 
 ale żmudnego użycia klawisza F5.
